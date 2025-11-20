@@ -9,7 +9,8 @@ class DiceBettingGame:
     def __init__(self, root):
         self.root = root
         self.root.title("주사위 합 10 넘기기 게임")
-        self.root.geometry("1100x700") 
+        # 창 크기 유지
+        self.root.geometry("1100x750") 
         
         # --- 디자인 설정 ---
         self.COLOR_BG = "#2E2E2E"
@@ -45,11 +46,10 @@ class DiceBettingGame:
         game_frame.pack(side="left", fill="both", expand=True, padx=(0, 20)) 
         game_frame.pack_propagate(False)
 
-        # --- 상단 정보 프레임 ---
+        # --- 상단 정보 프레임 (pack 유지) ---
         top_frame = tk.Frame(game_frame, bg=self.COLOR_BG)
         top_frame.pack(pady=(0, 10), fill="x")
 
-        # height=2를 추가하여 라운드 정보가 두 줄을 차지하도록 고정합니다.
         self.info_label = tk.Label(top_frame, text="", font=("Malgun Gothic", 11), justify=tk.LEFT, bg=self.COLOR_BG, fg=self.COLOR_TEXT, height=2)
         self.info_label.pack(side="left")
 
@@ -86,15 +86,16 @@ class DiceBettingGame:
         
         self.restart_button = tk.Button(game_frame, text="재시작", font=btn_font, bg=self.COLOR_ACCENT, fg=self.COLOR_BG, relief=tk.RAISED, borderwidth=3, width=25, pady=4, command=self.restart_game, state=tk.DISABLED)
         self.restart_button.pack(pady=5)
-
-
-        # --- 결과 메시지 ---
-        self.result_label = tk.Label(game_frame, text="", font=("Malgun Gothic", 12, "bold"), wraplength=750, justify=tk.CENTER, bg=self.COLOR_BG)
-        self.result_label.pack(pady=(15, 0))
-
-        # --- 초기 코인 설정 프레임 ---
-        initial_coins_frame = tk.Frame(game_frame, bg=self.COLOR_BG)
-        initial_coins_frame.pack(pady=(10, 0))
+        
+        
+        # --- 하단 콘텐츠 프레임: grid 사용으로 밀림 방지 ---
+        bottom_content_frame = tk.Frame(game_frame, bg=self.COLOR_BG)
+        bottom_content_frame.pack(fill="x", pady=(15, 0))
+        bottom_content_frame.grid_columnconfigure(0, weight=1) 
+        
+        # 1. 초기 코인 설정 프레임 (Row 0) - [수정됨: 가장 위로 이동]
+        initial_coins_frame = tk.Frame(bottom_content_frame, bg=self.COLOR_BG)
+        initial_coins_frame.grid(row=0, column=0, pady=(20, 10)) 
 
         tk.Label(initial_coins_frame, text="초기 코인:", font=("Malgun Gothic", 10), bg=self.COLOR_BG, fg=self.COLOR_TEXT).pack(side=tk.LEFT, padx=5)
 
@@ -107,6 +108,16 @@ class DiceBettingGame:
 
         self.plus_button = tk.Button(initial_coins_frame, text="+", font=("Malgun Gothic", 10, "bold"), bg=self.COLOR_BTN, fg=self.COLOR_TEXT, command=self.increase_initial_coins, width=2)
         self.plus_button.pack(side=tk.LEFT)
+        
+        # 2. 결과 메시지 (Row 1) - [수정됨: 두 번째로 이동]
+        self.result_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 12, "bold"), wraplength=750, justify=tk.CENTER, bg=self.COLOR_BG)
+        self.result_label.grid(row=1, column=0, pady=(15, 10), sticky="ew") 
+
+        # 3. 명언 레이블 (Row 2) - [수정됨: 가장 아래로 이동]
+        self.quote_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 10, "italic"),
+                                     wraplength=750, justify=tk.CENTER, bg=self.COLOR_BG, 
+                                     fg=self.COLOR_FAILURE)
+        self.quote_label.grid(row=2, column=0, pady=(5, 5), sticky="ew") 
         
         # --- [우측] 기록 영역 프레임 ---
         self.history_frame = tk.Frame(main_frame, bg=self.COLOR_BG, width=300, relief=tk.SUNKEN, borderwidth=1)
@@ -175,6 +186,9 @@ class DiceBettingGame:
         self.new_round_button.config(text="다음 라운드 시작", state=tk.DISABLED)
         self.restart_button.config(state=tk.DISABLED) 
         self.result_label.config(text="")
+        
+        # 새 라운드 시작 시 명언 레이블 초기화
+        self.quote_label.config(text="")
 
 
     def next_roll(self):
@@ -238,6 +252,7 @@ class DiceBettingGame:
             self.coins += winnings
             self.status_label.config(text="라운드 종료!", fg=self.COLOR_TEXT)
             self.result_label.config(text=f"✅ 성공! {winnings} 코인을 얻었습니다.\n최종 합: {total} ({payouts[win_stage]}배)", fg=self.COLOR_SUCCESS)
+            self.quote_label.config(text="") # 성공 시 명언 레이블 초기화
         else:
             full_message = "명언을 가져오는 데 실패했습니다."
             try:
@@ -254,7 +269,12 @@ class DiceBettingGame:
                 pass
             
             self.status_label.config(text="라운드 종료!", fg=self.COLOR_TEXT)
-            self.result_label.config(text=f"❌ 실패! {bet_amount} 코인을 잃었습니다.\n최종 합: {total}\n\n{full_message}", fg=self.COLOR_FAILURE)
+            
+            # result_label에는 실패 메시지만 표시
+            self.result_label.config(text=f"❌ 실패! {bet_amount} 코인을 잃었습니다.\n최종 합: {total}", fg=self.COLOR_FAILURE)
+            
+            # quote_label에 명언 표시
+            self.quote_label.config(text=full_message)
         
         self.end_round()
 
@@ -294,8 +314,6 @@ class DiceBettingGame:
         
         self.update_history_display()
 
-        # [수정된 부분]: messagebox.showinfo("게임 종료", ...) 제거
-        # 최종 메시지를 result_label에 표시합니다.
         final_msg = f"🎉 **최종 게임 종료!** 🎉\n\n초기 코인: {initial_coins} | 최종 코인: {final_coins}\n이익률: {profit_rate:.2f}%"
         self.status_label.config(text="게임을 마쳤습니다. 재시작 버튼을 누르세요.", fg=self.COLOR_TEXT)
         
@@ -306,12 +324,12 @@ class DiceBettingGame:
             self.result_label.config(text=final_msg, fg=self.COLOR_FAILURE)
         else:
              self.result_label.config(text=final_msg, fg=self.COLOR_ACCENT)
+        
+        self.quote_label.config(text="") # 게임 종료 시 명언 레이블 초기화
 
 
     def show_bankruptcy_screen(self):
         self.end_game() 
-        
-        # [수정된 부분]: 파산 시 messagebox.showinfo 제거
         
         # 모든 위젯 제거
         for widget in self.root.winfo_children():
@@ -374,7 +392,6 @@ class DiceBettingGame:
         
         info_text = f"라운드: {self.round_number}/{self.max_rounds}\n현재: {stage_text}"
         
-        # [수정된 부분]: 게임 시작 전에는 빈 줄로 초기화하여 height=2로 확보한 공간을 사용합니다.
         if self.round_number == 0:
             info_text = "\n" 
             
