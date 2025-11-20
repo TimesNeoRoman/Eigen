@@ -93,7 +93,7 @@ class DiceBettingGame:
         bottom_content_frame.pack(fill="x", pady=(15, 0))
         bottom_content_frame.grid_columnconfigure(0, weight=1) 
         
-        # 1. 초기 코인 설정 프레임 (Row 0) - [수정됨: 가장 위로 이동]
+        # 1. 초기 코인 설정 프레임 (Row 0)
         initial_coins_frame = tk.Frame(bottom_content_frame, bg=self.COLOR_BG)
         initial_coins_frame.grid(row=0, column=0, pady=(20, 10)) 
 
@@ -109,11 +109,11 @@ class DiceBettingGame:
         self.plus_button = tk.Button(initial_coins_frame, text="+", font=("Malgun Gothic", 10, "bold"), bg=self.COLOR_BTN, fg=self.COLOR_TEXT, command=self.increase_initial_coins, width=2)
         self.plus_button.pack(side=tk.LEFT)
         
-        # 2. 결과 메시지 (Row 1) - [수정됨: 두 번째로 이동]
+        # 2. 결과 메시지 (Row 1)
         self.result_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 12, "bold"), wraplength=750, justify=tk.CENTER, bg=self.COLOR_BG)
         self.result_label.grid(row=1, column=0, pady=(15, 10), sticky="ew") 
 
-        # 3. 명언 레이블 (Row 2) - [수정됨: 가장 아래로 이동]
+        # 3. 명언 레이블 (Row 2)
         self.quote_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 10, "italic"),
                                      wraplength=750, justify=tk.CENTER, bg=self.COLOR_BG, 
                                      fg=self.COLOR_FAILURE)
@@ -209,6 +209,9 @@ class DiceBettingGame:
     def place_bet(self, choice):
         min_bets = {0: 1, 1: 2, 2: 3}
         min_bet = min_bets[self.current_stage]
+        
+        # 베팅이 이루어진 단계 (0, 1, 2)를 저장
+        betting_stage = self.current_stage
 
         bet_amount_str = simpledialog.askstring("베팅", f"얼마를 베팅하시겠습니까? (최소: {min_bet})", parent=self.root)
 
@@ -230,32 +233,66 @@ class DiceBettingGame:
         self.status_label.config(text="주사위를 굴립니다...", fg="black")
         self.update_display()
         
-        self.sequential_roll(self.current_stage, choice, bet_amount)
+        # 베팅 단계를 resolve_bet까지 전달
+        self.sequential_roll(self.current_stage, choice, bet_amount, betting_stage)
 
-    def sequential_roll(self, dice_index, choice, bet_amount):
+    def sequential_roll(self, dice_index, choice, bet_amount, betting_stage):
         if dice_index < 3:
             self.dice_values[dice_index] = random.randint(1, 6)
             self.update_display()
-            self.root.after(1000, lambda: self.sequential_roll(dice_index + 1, choice, bet_amount))
+            self.root.after(1000, lambda: self.sequential_roll(dice_index + 1, choice, bet_amount, betting_stage))
         else:
-            self.resolve_bet(choice, bet_amount)
+            # 모든 주사위를 굴린 후, 베팅 정보를 가지고 결과 해결
+            self.resolve_bet(choice, bet_amount, betting_stage)
 
-    def resolve_bet(self, choice, bet_amount):
-        payouts = {0: 4, 1: 3, 2: 2}
+    def resolve_bet(self, choice, bet_amount, betting_stage):
+        # 기본 배율 설정 (베팅 단계 0: 4배, 1: 3배)
+        payout = 0
+        payout_description = ""
+        
+        if betting_stage == 0:
+            payout = 4
+            payout_description = "4배"
+        elif betting_stage == 1:
+            payout = 3
+            payout_description = "3배"
+        elif betting_stage == 2:
+            # --- 3단계 (주사위 2개)의 확실성 기반 배율 로직 ---
+            sum_first_two = self.dice_values[0] + self.dice_values[1]
+            
+            # 확실한 베팅 조건:
+            # 1. 'Over 10'이 확실: 첫 두 주사위의 합이 10, 11, 12인 경우
+            # 2. 'Under 10'이 확실: 첫 두 주사위의 합이 2, 3인 경우
+            is_certain = (sum_first_two >= 10) or (sum_first_two <= 3)
+            
+            if is_certain:
+                # 확실한 베팅: 1.3배
+                payout = 1.3
+                payout_description = "1.3배 (확실성 조건 충족)"
+            else:
+                # 불확실한 베팅: 2배 (원래 배율 유지)
+                payout = 2.0 
+                payout_description = "2배 (불확실성 조건)"
+            # ---------------------------------------------------
+        
         total = sum(self.dice_values)
         result = 'over' if total > 10 else 'under'
         
-        win_stage = self.current_stage 
-
         if choice == result:
-            winnings = bet_amount * payouts[win_stage]
+            # === 요청 사항 반영: 1.3배일 경우 소수점은 반올림(round) 처리 ===
+            if payout == 1.3:
+                winnings = round(bet_amount * payout) # 소수점 반올림 처리
+            else:
+                winnings = math.floor(bet_amount * payout) # 그 외 배율은 내림 처리 (기존 로직 유지)
+
             self.coins += winnings
             self.status_label.config(text="라운드 종료!", fg=self.COLOR_TEXT)
-            self.result_label.config(text=f"✅ 성공! {winnings} 코인을 얻었습니다.\n최종 합: {total} ({payouts[win_stage]}배)", fg=self.COLOR_SUCCESS)
+            self.result_label.config(text=f"✅ 성공! {winnings} 코인 (배율: {payout_description})을 얻었습니다.\n최종 합: {total}", fg=self.COLOR_SUCCESS)
             self.quote_label.config(text="") # 성공 시 명언 레이블 초기화
         else:
             full_message = "명언을 가져오는 데 실패했습니다."
             try:
+                # 명언 API 호출
                 with urllib.request.urlopen("https://korean-advice-open-api.vercel.app/api/advice") as response:
                     data = json.loads(response.read().decode())
                     quote = data.get('message') or data.get('advice', '다음에 더 잘할 수 있을 거예요.')
@@ -269,11 +306,7 @@ class DiceBettingGame:
                 pass
             
             self.status_label.config(text="라운드 종료!", fg=self.COLOR_TEXT)
-            
-            # result_label에는 실패 메시지만 표시
             self.result_label.config(text=f"❌ 실패! {bet_amount} 코인을 잃었습니다.\n최종 합: {total}", fg=self.COLOR_FAILURE)
-            
-            # quote_label에 명언 표시
             self.quote_label.config(text=full_message)
         
         self.end_round()
@@ -314,7 +347,7 @@ class DiceBettingGame:
         
         self.update_history_display()
 
-        final_msg = f"🎉 **최종 게임 종료!** 🎉\n\n초기 코인: {initial_coins} | 최종 코인: {final_coins}\n이익률: {profit_rate:.2f}%"
+        final_msg = f"🎉 **최종 게임 종료!** 🎉\n\n초기 코인: {initial_coins} | 최종 코인: {final_coins}\n이익률: {profit_rate:+.2f}%"
         self.status_label.config(text="게임을 마쳤습니다. 재시작 버튼을 누르세요.", fg=self.COLOR_TEXT)
         
         # 이전 라운드 결과를 덮어씁니다.
@@ -386,7 +419,8 @@ class DiceBettingGame:
         stages_info = {
             0: "1단계: 주사위 0개 (최소 베팅: 1, 성공 시 4배)",
             1: "2단계: 주사위 1개 (최소 베팅: 2, 성공 시 3배)",
-            2: "3단계: 주사위 2개 (최소 베팅: 3, 성공 시 2배)"
+            # 3단계: 확실성 여부에 따라 1.3배 또는 2배가 적용됩니다.
+            2: "3단계: 주사위 2개 (최소 베팅: 3, 성공 시 1.3배(확실, 반올림) / 2배(불확실, 내림))" 
         }
         stage_text = stages_info.get(self.current_stage, '베팅 결과 확인 중')
         
@@ -409,7 +443,16 @@ class DiceBettingGame:
             self.status_label.config(text=f"첫 주사위는 {self.dice_values[0]}입니다. 베팅하거나 굴리세요.", fg=self.COLOR_INFO)
             self.next_roll_button.config(text="다음 주사위 굴리기")
         elif self.current_stage == 2:
-            self.status_label.config(text=f"두 주사위는 {self.dice_values[0]}, {self.dice_values[1]}입니다. 베팅하거나 결과를 확인하세요.", fg=self.COLOR_INFO)
+            # 첫 두 주사위의 합을 계산하여 확실성 메시지를 추가적으로 표시합니다.
+            sum_two = self.dice_values[0] + self.dice_values[1]
+            if sum_two >= 10:
+                 certainty_msg = "Over 10이 확실합니다. (배율: 1.3배, 반올림)"
+            elif sum_two <= 3:
+                 certainty_msg = "Under 10이 확실합니다. (배율: 1.3배, 반올림)"
+            else:
+                 certainty_msg = "결과가 불확실합니다. (배율: 2배, 내림)"
+            
+            self.status_label.config(text=f"두 주사위는 {self.dice_values[0]}, {self.dice_values[1]}입니다. {certainty_msg}", fg=self.COLOR_INFO)
             self.next_roll_button.config(text="결과 확인 (베팅 안함)")
         elif self.current_stage == 3 and not any(v == 0 for v in self.dice_values):
             pass
