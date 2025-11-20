@@ -31,7 +31,6 @@ class DiceBettingGame:
 
         # UI 요소 설정
         self.setup_ui()
-        self.start_new_round()
 
     def setup_ui(self):
         # --- 상단 정보 프레임 ---
@@ -49,7 +48,7 @@ class DiceBettingGame:
         self.dice_display.pack(pady=20)
 
         # --- 상태 메시지 ---
-        self.status_label = tk.Label(self.root, text="새로운 라운드를 시작합니다.", font=("Malgun Gothic", 12), bg=self.COLOR_BG, fg=self.COLOR_INFO)
+        self.status_label = tk.Label(self.root, text="초기 코인을 설정하고 '새 라운드 시작'을 누르세요.", font=("Malgun Gothic", 12), bg=self.COLOR_BG, fg=self.COLOR_INFO)
         self.status_label.pack(pady=10)
 
         # --- 베팅 버튼 프레임 ---
@@ -59,22 +58,57 @@ class DiceBettingGame:
         btn_font = ("Malgun Gothic", 10, "bold")
         btn_style = {"font": btn_font, "bg": self.COLOR_BTN, "fg": self.COLOR_TEXT, "relief": tk.RAISED, "borderwidth": 3, "width": 18, "pady": 5}
 
-        self.bet_button_over = tk.Button(bet_frame, text="▲ 10을 넘는다 (Over)", **btn_style, command=lambda: self.place_bet('over'))
+        self.bet_button_over = tk.Button(bet_frame, text="▲ 10을 넘는다 (Over)", **btn_style, command=lambda: self.place_bet('over'), state=tk.DISABLED)
         self.bet_button_over.pack(side=tk.LEFT, padx=10)
 
-        self.bet_button_under = tk.Button(bet_frame, text="▼ 10 이하다 (Under)", **btn_style, command=lambda: self.place_bet('under'))
+        self.bet_button_under = tk.Button(bet_frame, text="▼ 10 이하다 (Under)", **btn_style, command=lambda: self.place_bet('under'), state=tk.DISABLED)
         self.bet_button_under.pack(side=tk.LEFT, padx=10)
 
         # --- 진행 버튼 ---
-        self.next_roll_button = tk.Button(self.root, text="다음 주사위 굴리기", font=btn_font, bg=self.COLOR_INFO, fg=self.COLOR_TEXT, relief=tk.RAISED, borderwidth=3, width=25, pady=4, command=self.next_roll)
+        self.next_roll_button = tk.Button(self.root, text="다음 주사위 굴리기", font=btn_font, bg=self.COLOR_INFO, fg=self.COLOR_TEXT, relief=tk.RAISED, borderwidth=3, width=25, pady=4, command=self.next_roll, state=tk.DISABLED)
         self.next_roll_button.pack(pady=10)
         
-        self.new_round_button = tk.Button(self.root, text="새 라운드 시작", font=btn_font, relief=tk.RAISED, borderwidth=3, width=25, pady=4, command=self.start_new_round, state=tk.DISABLED)
+        self.new_round_button = tk.Button(self.root, text="새 라운드 시작", font=btn_font, relief=tk.RAISED, borderwidth=3, width=25, pady=4, command=self.start_new_round, state=tk.NORMAL)
         self.new_round_button.pack(pady=5)
 
         # --- 결과 메시지 ---
         self.result_label = tk.Label(self.root, text="", font=("Malgun Gothic", 12, "bold"), wraplength=750, justify=tk.CENTER, bg=self.COLOR_BG)
         self.result_label.pack(pady=(15, 0))
+
+        # --- 초기 코인 설정 프레임 ---
+        initial_coins_frame = tk.Frame(self.root, bg=self.COLOR_BG)
+        initial_coins_frame.pack(pady=(10, 0))
+
+        tk.Label(initial_coins_frame, text="초기 코인:", font=("Malgun Gothic", 10), bg=self.COLOR_BG, fg=self.COLOR_TEXT).pack(side=tk.LEFT, padx=5)
+
+        self.minus_button = tk.Button(initial_coins_frame, text="-", font=("Malgun Gothic", 10, "bold"), bg=self.COLOR_BTN, fg=self.COLOR_TEXT, command=self.decrease_initial_coins, width=2)
+        self.minus_button.pack(side=tk.LEFT)
+
+        self.initial_coins_entry = tk.Entry(initial_coins_frame, width=4, font=("Malgun Gothic", 10, "bold"), justify='center', bg=self.COLOR_BG, fg=self.COLOR_TEXT)
+        self.initial_coins_entry.insert(0, "3")
+        self.initial_coins_entry.pack(side=tk.LEFT, padx=5)
+
+        self.plus_button = tk.Button(initial_coins_frame, text="+", font=("Malgun Gothic", 10, "bold"), bg=self.COLOR_BTN, fg=self.COLOR_TEXT, command=self.increase_initial_coins, width=2)
+        self.plus_button.pack(side=tk.LEFT)
+
+    def increase_initial_coins(self):
+        try:
+            current_value = int(self.initial_coins_entry.get())
+            self.initial_coins_entry.delete(0, tk.END)
+            self.initial_coins_entry.insert(0, str(current_value + 1))
+        except ValueError:
+            self.initial_coins_entry.delete(0, tk.END)
+            self.initial_coins_entry.insert(0, "3")
+
+    def decrease_initial_coins(self):
+        try:
+            current_value = int(self.initial_coins_entry.get())
+            if current_value > 1:
+                self.initial_coins_entry.delete(0, tk.END)
+                self.initial_coins_entry.insert(0, str(current_value - 1))
+        except ValueError:
+            self.initial_coins_entry.delete(0, tk.END)
+            self.initial_coins_entry.insert(0, "3")
 
 
     def start_new_round(self):
@@ -83,9 +117,18 @@ class DiceBettingGame:
             self.root.quit()
             return
 
-        if self.coins == 0:
+        if self.coins == 0 and self.round_number > 0: # 처음 시작 시에는 파산 처리 안 함
             self.show_bankruptcy_screen()
             return
+
+        if self.round_number == 0:
+            try:
+                self.coins = int(self.initial_coins_entry.get())
+                self.initial_coins_entry.config(state=tk.DISABLED)
+                self.minus_button.config(state=tk.DISABLED)
+                self.plus_button.config(state=tk.DISABLED)
+            except (ValueError, TypeError):
+                self.coins = 3
 
         self.round_number += 1
         self.dice_values = [0, 0, 0]
@@ -220,9 +263,8 @@ class DiceBettingGame:
         self.current_stage = 0
         self.round_number = 0
 
-        # UI 재생성 및 새 라운드 시작
+        # UI 재생성
         self.setup_ui()
-        self.start_new_round()
 
 
     def update_display(self):
