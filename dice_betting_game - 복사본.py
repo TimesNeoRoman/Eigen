@@ -251,29 +251,26 @@ class DiceBettingGame:
         payout_description = ""
         
         if betting_stage == 0:
-            payout = 4
+            payout = 4.0
             payout_description = "4배"
         elif betting_stage == 1:
-            payout = 3
+            payout = 3.0
             payout_description = "3배"
         elif betting_stage == 2:
             # --- 3단계 (주사위 2개)의 확실성 기반 배율 로직 ---
             sum_first_two = self.dice_values[0] + self.dice_values[1]
             
-            # 승리 조건: Total Sum > 11 (12 이상)
             # 확실성 조건: 첫 두 주사위 합이 11 이상 (Over 확실) 또는 5 이하 (Under 확실)
-            # (11 이상): 11+1=12 (min) -> Over 11 확실
-            # (5 이하): 5+6=11 (max) -> Under 11 확실
             is_certain = (sum_first_two >= 11) or (sum_first_two <= 5)
             
             if is_certain:
-                # 확실한 베팅: 1.4배로 수정됨 (이전 1.3배)
+                # 확실한 베팅: 1.4배
                 payout = 1.4 
                 payout_description = "1.4배 (확실성 조건 충족, 반올림)"
             else:
                 # 불확실한 베팅: 2배 (원래 배율 유지)
                 payout = 2.0 
-                payout_description = "2배 (불확실성 조건, 내림)"
+                payout_description = "2배 (불확실성 조건)" # '반올림' 문구 제거
             # ---------------------------------------------------
         
         total = sum(self.dice_values)
@@ -282,11 +279,8 @@ class DiceBettingGame:
         result = 'over' if total > 11 else 'under'
         
         if choice == result:
-            # 1.4배일 경우 반올림, 그 외 배율은 내림 처리
-            if payout == 1.4:
-                winnings = round(bet_amount * payout)
-            else:
-                winnings = math.floor(bet_amount * payout)
+            # 모든 배율에 대해 반올림 처리
+            winnings = round(bet_amount * payout)
 
             self.coins += winnings
             self.status_label.config(text="라운드 종료!", fg=self.COLOR_TEXT)
@@ -455,15 +449,17 @@ class DiceBettingGame:
             if is_certain:
                  certainty_msg = "확실한 결과입니다. (배율: 1.4배, 반올림)"
             else:
-                 certainty_msg = "결과가 불확실합니다. (배율: 2배, 내림)"
+                 certainty_msg = "결과가 불확실합니다. (배율: 2배)" # '반올림' 문구 제거
             
             self.status_label.config(text=f"두 주사위는 {self.dice_values[0]}, {self.dice_values[1]}입니다. {certainty_msg}", fg=self.COLOR_INFO)
             self.next_roll_button.config(text="결과 확인 (베팅 안함)")
         elif self.current_stage == 3 and not any(v == 0 for v in self.dice_values):
             pass
 
-
 if __name__ == "__main__":
+    # tkinter 윈도우 생성
     root = tk.Tk()
+    # 게임 인스턴스 생성 및 시작
     game = DiceBettingGame(root)
+    # 이벤트 루프 시작 (이 부분이 GUI를 화면에 표시하고 상호작용을 처리합니다)
     root.mainloop()
