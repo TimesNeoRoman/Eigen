@@ -20,19 +20,21 @@ class DiceBettingGame:
         self.root.geometry("1250x750") 
         
         # --- 디자인 설정 (새로운 세련된 다크 테마) ---
-        self.COLOR_BG = "#1F2937"    # Dark Slate Blue
+        self.COLOR_BG = "#1F2937"    # Dark Slate Blue (텍스트 색상으로도 사용 예정)
         self.COLOR_CARD = "#374151"  # Slightly Lighter Dark for Frames
-        self.COLOR_TEXT = "#F3F4F6"  # Near White
+        self.COLOR_TEXT = "#FFFFFF"  # Pure White
         self.COLOR_ACCENT = "#F59E0B" # Amber Gold
         self.COLOR_SUCCESS = "#10B981" # Emerald Green
         self.COLOR_FAILURE = "#EF4444" # Red
         self.COLOR_INFO = "#60A5FA"   # Light Blue
         self.COLOR_BTN = "#4B5563"    # Dark Gray for buttons
 
-        # 폰트 크기 조정: 12 -> 11
-        self.FONT_MAIN = ("Malgun Gothic", 11)
+        # 폰트 크기 조정: 11 -> 12로 변경
+        self.FONT_MAIN = ("Malgun Gothic", 12)
         # 폰트 크기 조정: 18 -> 16
         self.FONT_TITLE = ("Malgun Gothic", 16, "bold")
+        # 상태 메시지용 폰트 (메인 텍스트보다 크게 강조)
+        self.FONT_STATUS = ("Malgun Gothic", 14, "bold") # 새로 추가
         # 폰트 크기 조정: 70 -> 60
         self.FONT_DICE = ("Malgun Gothic", 60, "bold")
 
@@ -65,6 +67,7 @@ class DiceBettingGame:
         top_frame = tk.Frame(game_frame, bg=self.COLOR_CARD)
         top_frame.pack(pady=(0, 10), fill="x") # 패딩 축소
 
+        # info_label 폰트 수정: FONT_MAIN (12pt) 사용
         self.info_label = tk.Label(top_frame, text="", font=self.FONT_MAIN, justify=tk.LEFT, bg=self.COLOR_CARD, fg=self.COLOR_TEXT, height=2)
         self.info_label.pack(side="left")
 
@@ -76,50 +79,55 @@ class DiceBettingGame:
         self.dice_display = tk.Label(game_frame, text="🎲 🎲 🎲", font=self.FONT_DICE, bg=self.COLOR_CARD, fg=self.COLOR_TEXT)
         self.dice_display.pack(pady=20)
 
-        # --- 상태 메시지 (패딩 증가: 주사위 디스플레이와의 간격 확보) ---
-        self.status_label = tk.Label(game_frame, text="초기 코인을 설정하고 '새 라운드 시작'을 누르세요.", font=self.FONT_MAIN, bg=self.COLOR_CARD, fg=self.COLOR_INFO)
+        # --- 상태 메시지 (FONT_STATUS 14pt Bold 사용) ---
+        self.status_label = tk.Label(game_frame, text="초기 코인을 설정하고 '새 라운드 시작'을 누르세요.", font=self.FONT_STATUS, bg=self.COLOR_CARD, fg=self.COLOR_INFO)
         self.status_label.pack(pady=(20, 5)) # 상단 패딩을 20으로 늘림
 
         # --- 베팅 버튼 프레임 (패딩 축소) ---
         bet_frame = tk.Frame(game_frame, bg=self.COLOR_CARD)
         bet_frame.pack(pady=15)
         
-        # 버튼 스타일 축소
-        btn_font = ("Malgun Gothic", 11, "bold")
+        # 버튼 스타일: 폰트 크기 12 유지 (가독성 이미 개선됨)
+        btn_font = ("Malgun Gothic", 12, "bold") 
         btn_style = {
             "font": btn_font, 
             "bg": self.COLOR_BTN, 
-            "fg": self.COLOR_TEXT, 
+            "fg": self.COLOR_TEXT,  # 텍스트 색상은 흰색 유지
             "relief": tk.RAISED, 
-            "borderwidth": 3, # 4 -> 3
+            "borderwidth": 3, 
             "width": 18, 
             "pady": 6, 
             "activebackground": self.COLOR_ACCENT,
             "activeforeground": self.COLOR_BG
         }
 
-        self.bet_button_over = tk.Button(bet_frame, text="▲ 11을 넘는다 (Over)", **btn_style, command=lambda: self.place_bet('over'), state=tk.DISABLED)
-        self.bet_button_over.pack(side=tk.LEFT, padx=10) # 15 -> 10
+        # 베팅 버튼 문구 수정 (유지)
+        self.bet_button_over = tk.Button(bet_frame, text="11 초과 (Over)", **btn_style, command=lambda: self.place_bet('over'), state=tk.DISABLED)
+        self.bet_button_over.pack(side=tk.LEFT, padx=10) 
 
-        self.bet_button_under = tk.Button(bet_frame, text="▼ 11 이하다 (Under)", **btn_style, command=lambda: self.place_bet('under'), state=tk.DISABLED)
-        self.bet_button_under.pack(side=tk.LEFT, padx=10) # 15 -> 10
+        # 베팅 버튼 문구 수정 (유지)
+        self.bet_button_under = tk.Button(bet_frame, text="11 이하 (Under)", **btn_style, command=lambda: self.place_bet('under'), state=tk.DISABLED)
+        self.bet_button_under.pack(side=tk.LEFT, padx=10) 
 
-        # --- 진행 버튼 스타일 축소 ---
+        # --- 진행 버튼 스타일: 폰트 크기 12 유지, 텍스트 색상 변경 ---
         progress_btn_style = {
             "font": btn_font, 
             "relief": tk.RAISED, 
             "borderwidth": 3, 
-            "width": 20, # 25 -> 20
-            "pady": 5 # 6 -> 5
+            "width": 20, 
+            "pady": 5 
         }
         
-        self.next_roll_button = tk.Button(game_frame, text="다음 주사위 굴리기", **progress_btn_style, bg=self.COLOR_INFO, fg=self.COLOR_TEXT, command=self.next_roll, state=tk.DISABLED)
-        self.next_roll_button.pack(pady=(10, 5)) # 패딩 축소
+        # '다음 주사위 굴리기' 버튼 (배경: COLOR_INFO, 텍스트: COLOR_BG)
+        self.next_roll_button = tk.Button(game_frame, text="다음 주사위 굴리기", **progress_btn_style, bg=self.COLOR_INFO, fg=self.COLOR_BG, command=self.next_roll, state=tk.DISABLED)
+        self.next_roll_button.pack(pady=(10, 5)) 
         
-        self.new_round_button = tk.Button(game_frame, text="새 라운드 시작", **progress_btn_style, bg=self.COLOR_SUCCESS, fg=self.COLOR_TEXT, command=self.start_new_round, state=tk.NORMAL)
+        # '새 라운드 시작' 버튼 (배경: COLOR_SUCCESS, 텍스트: COLOR_BG)
+        self.new_round_button = tk.Button(game_frame, text="새 라운드 시작", **progress_btn_style, bg=self.COLOR_SUCCESS, fg=self.COLOR_BG, command=self.start_new_round, state=tk.NORMAL)
         self.new_round_button.pack(pady=5)
         
-        self.restart_button = tk.Button(game_frame, text="재시작", **progress_btn_style, bg=self.COLOR_FAILURE, fg=self.COLOR_TEXT, command=self.restart_game, state=tk.DISABLED)
+        # '재시작' 버튼 (배경: COLOR_FAILURE, 텍스트: COLOR_BG)
+        self.restart_button = tk.Button(game_frame, text="재시작", **progress_btn_style, bg=self.COLOR_FAILURE, fg=self.COLOR_BG, command=self.restart_game, state=tk.DISABLED)
         self.restart_button.pack(pady=5)
         
         
@@ -128,43 +136,44 @@ class DiceBettingGame:
         bottom_content_frame.pack(fill="x", pady=(15, 0))
         bottom_content_frame.grid_columnconfigure(0, weight=1) 
         
-        # 1. 초기 코인 설정 프레임 (패딩/너비/폰트 축소)
+        # 1. 초기 코인 설정 프레임 (폰트 FONT_MAIN 12pt 사용)
         initial_coins_frame = tk.Frame(bottom_content_frame, bg=self.COLOR_CARD)
         initial_coins_frame.grid(row=0, column=0, pady=(5, 5)) 
 
         tk.Label(initial_coins_frame, text="시작 코인 설정:", font=self.FONT_MAIN, bg=self.COLOR_CARD, fg=self.COLOR_TEXT).pack(side=tk.LEFT, padx=10)
 
-        input_style = {"font": self.FONT_MAIN, "bg": self.COLOR_BTN, "fg": self.COLOR_TEXT, "width": 3, "pady": 2}
+        # 입력 필드 버튼 스타일도 폰트 크기 12로 유지
+        input_style = {"font": ("Malgun Gothic", 12, "bold"), "bg": self.COLOR_BTN, "fg": self.COLOR_TEXT, "width": 3, "pady": 2}
         
         self.minus_button = tk.Button(initial_coins_frame, text="➖", **input_style, command=self.decrease_initial_coins)
         self.minus_button.pack(side=tk.LEFT)
 
-        self.initial_coins_entry = tk.Entry(initial_coins_frame, width=3, font=("Malgun Gothic", 11, "bold"), justify='center', bg=self.COLOR_BTN, fg=self.COLOR_ACCENT)
+        self.initial_coins_entry = tk.Entry(initial_coins_frame, width=3, font=("Malgun Gothic", 12, "bold"), justify='center', bg=self.COLOR_BTN, fg=self.COLOR_ACCENT)
         self.initial_coins_entry.insert(0, str(self.initial_coins_value))
         self.initial_coins_entry.pack(side=tk.LEFT, padx=6)
 
         self.plus_button = tk.Button(initial_coins_frame, text="➕", **input_style, command=self.increase_initial_coins)
         self.plus_button.pack(side=tk.LEFT)
         
-        # 2. 결과 메시지 (폰트/wraplength 축소, 패딩 축소)
+        # 2. 결과 메시지 (폰트 13pt bold 유지, COLOR_TEXT는 흰색)
         self.result_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 13, "bold"), wraplength=650, justify=tk.CENTER, bg=self.COLOR_CARD, fg=self.COLOR_TEXT)
         self.result_label.grid(row=1, column=0, pady=(10, 5), sticky="ew") 
 
-        # 3. 명언 레이블 (wraplength 축소, 패딩 축소)
-        self.quote_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 10, "italic"),
+        # 3. 명언 레이블 (폰트 10pt -> 11pt로 증가)
+        self.quote_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 11, "italic"),
                                      wraplength=650, justify=tk.CENTER, bg=self.COLOR_CARD, 
                                      fg=self.COLOR_INFO)
         self.quote_label.grid(row=2, column=0, pady=(2, 2), sticky="ew") 
         
-        # --- [우측] 기록 영역 프레임 (너비 축소 및 내부 패딩 축소) ---
+        # --- [우측] 기록 영역 프레임 ---
         self.history_frame = tk.Frame(main_frame, bg=self.COLOR_CARD, width=280, relief=tk.FLAT, borderwidth=1)
         self.history_frame.pack(side="right", fill="both", expand=True)
         self.history_frame.pack_propagate(False)
 
-        # 기록 타이틀 (폰트/패딩 축소)
+        # 기록 타이틀 (유지)
         tk.Label(self.history_frame, text="🏆 최고 이익률 Top 5 🏆", font=self.FONT_TITLE, bg=self.COLOR_BTN, fg=self.COLOR_ACCENT, pady=8).pack(fill="x")
         
-        # 기록 표시 레이블들을 위한 컨테이너 (패딩 축소)
+        # 기록 표시 레이블들을 위한 컨테이너 
         self.history_labels_container = tk.Frame(self.history_frame, bg=self.COLOR_CARD)
         self.history_labels_container.pack(fill="both", expand=True, padx=10, pady=5)
         
@@ -239,7 +248,8 @@ class DiceBettingGame:
         if self.current_stage >= 3:
             # 베팅 없이 모든 주사위를 굴린 경우
             total = sum(self.dice_values)
-            self.status_label.config(text=f"베팅하지 않았습니다. 최종 합: {total}", fg=self.COLOR_INFO)
+            # FONT_STATUS 적용
+            self.status_label.config(text=f"베팅하지 않았습니다. 최종 합: {total}", font=self.FONT_STATUS, fg=self.COLOR_INFO)
             self.end_round()
             return
 
@@ -268,7 +278,8 @@ class DiceBettingGame:
         self.bet_button_over.config(state=tk.DISABLED)
         self.bet_button_under.config(state=tk.DISABLED)
         self.next_roll_button.config(state=tk.DISABLED)
-        self.status_label.config(text="주사위를 굴립니다...", fg=self.COLOR_TEXT)
+        # FONT_STATUS 적용
+        self.status_label.config(text="주사위를 굴립니다...", font=self.FONT_STATUS, fg=self.COLOR_TEXT)
         self.update_display()
         
         # 베팅 단계를 resolve_bet까지 전달
@@ -321,7 +332,8 @@ class DiceBettingGame:
             winnings = round(bet_amount * payout)
 
             self.coins += winnings
-            self.status_label.config(text="라운드 종료!", fg=self.COLOR_TEXT)
+            # FONT_STATUS 적용
+            self.status_label.config(text="라운드 종료!", font=self.FONT_STATUS, fg=self.COLOR_TEXT)
             self.result_label.config(text=f"✅ 성공! {winnings} 코인 (배율: {payout_description})을 얻었습니다.\n최종 합: {total}", fg=self.COLOR_SUCCESS)
             self.quote_label.config(text="") 
         else:
@@ -340,7 +352,8 @@ class DiceBettingGame:
             except Exception:
                 pass
             
-            self.status_label.config(text="라운드 종료!", fg=self.COLOR_TEXT)
+            # FONT_STATUS 적용
+            self.status_label.config(text="라운드 종료!", font=self.FONT_STATUS, fg=self.COLOR_TEXT)
             self.result_label.config(text=f"❌ 실패! {bet_amount} 코인을 잃었습니다.\n최종 합: {total}", fg=self.COLOR_FAILURE)
             self.quote_label.config(text=full_message)
         
@@ -383,7 +396,8 @@ class DiceBettingGame:
         self.update_history_display()
 
         final_msg = f"🎉 **최종 게임 종료!** 🎉\n\n초기 코인: {initial_coins} | 최종 코인: {final_coins}\n이익률: {profit_rate:+.2f}%"
-        self.status_label.config(text="게임을 마쳤습니다. 재시작 버튼을 누르세요.", fg=self.COLOR_TEXT)
+        # FONT_STATUS 적용
+        self.status_label.config(text="게임을 마쳤습니다. 재시작 버튼을 누르세요.", font=self.FONT_STATUS, fg=self.COLOR_TEXT)
         
         # 이전 라운드 결과를 덮어씁니다.
         if profit > 0:
@@ -407,9 +421,9 @@ class DiceBettingGame:
         bankruptcy_label = tk.Label(self.root, text="파산 💸", font=("Malgun Gothic", 90, "bold"), bg=self.COLOR_BG, fg=self.COLOR_FAILURE)
         bankruptcy_label.pack(pady=(100, 0), expand=True)
 
-        # 새 게임 시작 버튼 (폰트/패딩 축소)
-        btn_font = ("Malgun Gothic", 11, "bold")
-        new_game_button = tk.Button(self.root, text="새 게임 시작", font=btn_font, bg=self.COLOR_BTN, fg=self.COLOR_TEXT, relief=tk.RAISED, borderwidth=3, width=20, pady=6, command=self.restart_game)
+        # 새 게임 시작 버튼 (폰트/패딩 유지, 텍스트 색상 변경)
+        btn_font = ("Malgun Gothic", 12, "bold")
+        new_game_button = tk.Button(self.root, text="새 게임 시작", font=btn_font, bg=self.COLOR_BTN, fg=self.COLOR_BG, relief=tk.RAISED, borderwidth=3, width=20, pady=6, command=self.restart_game)
         new_game_button.pack(pady=(20, 100), expand=True)
         
     def restart_game(self):
@@ -429,6 +443,7 @@ class DiceBettingGame:
             widget.destroy()
 
         if not self.profit_history:
+            # FONT_MAIN (12pt) 사용
             tk.Label(self.history_labels_container, text="아직 기록된 게임이 없습니다.", font=self.FONT_MAIN, bg=self.COLOR_CARD, fg=self.COLOR_TEXT).pack(pady=10)
             return
 
@@ -448,7 +463,8 @@ class DiceBettingGame:
                 fg_color = self.COLOR_TEXT
                 
             tk.Label(self.history_labels_container, text=text, anchor='w', justify=tk.LEFT,
-                     font=("Malgun Gothic", 10, "bold"), bg=self.COLOR_CARD, fg=fg_color).pack(fill="x", pady=4, padx=5)
+                     font=("Malgun Gothic", 11, "bold"), # 폰트 크기를 10에서 11로 증가
+                     bg=self.COLOR_CARD, fg=fg_color).pack(fill="x", pady=4, padx=5)
 
 
     def update_display(self):
@@ -473,11 +489,12 @@ class DiceBettingGame:
         dice_str = " ".join([self.DICE_SYMBOLS.get(val, '❓') for val in self.dice_values])
         self.dice_display.config(text=dice_str)
 
+        # FONT_STATUS를 사용하여 메인 상태 메시지 강조
         if self.current_stage == 0:
-            self.status_label.config(text="새 라운드 시작 또는 초기 코인을 설정하세요.", fg=self.COLOR_INFO)
+            self.status_label.config(text="새 라운드 시작 또는 초기 코인을 설정하세요.", font=self.FONT_STATUS, fg=self.COLOR_INFO)
             self.next_roll_button.config(text="다음 주사위 굴리기")
         elif self.current_stage == 1:
-            self.status_label.config(text=f"첫 주사위는 {self.dice_values[0]}입니다. 베팅하거나 굴리세요.", fg=self.COLOR_INFO)
+            self.status_label.config(text=f"첫 주사위는 {self.dice_values[0]}입니다. 베팅하거나 굴리세요.", font=self.FONT_STATUS, fg=self.COLOR_INFO)
             self.next_roll_button.config(text="다음 주사위 굴리기")
         elif self.current_stage == 2:
             # 첫 두 주사위의 합을 계산하여 확실성 메시지를 추가적으로 표시합니다.
@@ -491,7 +508,7 @@ class DiceBettingGame:
             else:
                  certainty_msg = "결과가 불확실합니다. (배율: 2배)" 
             
-            self.status_label.config(text=f"두 주사위는 {self.dice_values[0]}, {self.dice_values[1]}입니다. {certainty_msg}", fg=self.COLOR_INFO)
+            self.status_label.config(text=f"두 주사위는 {self.dice_values[0]}, {self.dice_values[1]}입니다. {certainty_msg}", font=self.FONT_STATUS, fg=self.COLOR_INFO)
             self.next_roll_button.config(text="결과 확인 (베팅 안함)")
         elif self.current_stage == 3 and not any(v == 0 for v in self.dice_values):
             pass
