@@ -6,20 +6,35 @@ import json
 import math 
 
 class DiceBettingGame:
+    # 유니코드 주사위 기호 매핑
+    DICE_SYMBOLS = {
+        1: '⚀', 2: '⚁', 3: '⚂', 
+        4: '⚃', 5: '⚄', 6: '⚅',
+        0: '🎲' # 굴리기 전 상태
+    }
+
     def __init__(self, root):
         self.root = root
         self.root.title("주사위 합 11 넘기기 게임") 
-        # 창 크기 유지
-        self.root.geometry("1100x750") 
+        # 창 크기 유지: 가로 길이 1100 -> 1250으로 증가
+        self.root.geometry("1250x750") 
         
-        # --- 디자인 설정 ---
-        self.COLOR_BG = "#2E2E2E"
-        self.COLOR_TEXT = "#EAEAEA"
-        self.COLOR_ACCENT = "#FFD700"  # Gold
-        self.COLOR_SUCCESS = "#4CAF50" # Green
-        self.COLOR_FAILURE = "#F44336" # Red
-        self.COLOR_INFO = "#2196F3"   # Blue
-        self.COLOR_BTN = "#4A4A4A"
+        # --- 디자인 설정 (새로운 세련된 다크 테마) ---
+        self.COLOR_BG = "#1F2937"    # Dark Slate Blue
+        self.COLOR_CARD = "#374151"  # Slightly Lighter Dark for Frames
+        self.COLOR_TEXT = "#F3F4F6"  # Near White
+        self.COLOR_ACCENT = "#F59E0B" # Amber Gold
+        self.COLOR_SUCCESS = "#10B981" # Emerald Green
+        self.COLOR_FAILURE = "#EF4444" # Red
+        self.COLOR_INFO = "#60A5FA"   # Light Blue
+        self.COLOR_BTN = "#4B5563"    # Dark Gray for buttons
+
+        # 폰트 크기 조정: 12 -> 11
+        self.FONT_MAIN = ("Malgun Gothic", 11)
+        # 폰트 크기 조정: 18 -> 16
+        self.FONT_TITLE = ("Malgun Gothic", 16, "bold")
+        # 폰트 크기 조정: 70 -> 60
+        self.FONT_DICE = ("Malgun Gothic", 60, "bold")
 
         self.root.config(bg=self.COLOR_BG)
 
@@ -39,95 +54,118 @@ class DiceBettingGame:
     def setup_ui(self):
         # 전체 프레임 (왼쪽 게임 영역과 오른쪽 기록 영역 분리)
         main_frame = tk.Frame(self.root, bg=self.COLOR_BG)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20) # 패딩 축소
         
-        # --- [좌측] 게임 영역 프레임 ---
-        game_frame = tk.Frame(main_frame, bg=self.COLOR_BG, width=750)
+        # --- [좌측] 게임 영역 프레임 (너비 축소 및 패딩 축소) ---
+        game_frame = tk.Frame(main_frame, bg=self.COLOR_CARD, width=700, padx=15, pady=15, relief=tk.FLAT)
         game_frame.pack(side="left", fill="both", expand=True, padx=(0, 20)) 
         game_frame.pack_propagate(False)
 
-        # --- 상단 정보 프레임 (pack 유지) ---
-        top_frame = tk.Frame(game_frame, bg=self.COLOR_BG)
-        top_frame.pack(pady=(0, 10), fill="x")
+        # --- 상단 정보 프레임 ---
+        top_frame = tk.Frame(game_frame, bg=self.COLOR_CARD)
+        top_frame.pack(pady=(0, 10), fill="x") # 패딩 축소
 
-        self.info_label = tk.Label(top_frame, text="", font=("Malgun Gothic", 11), justify=tk.LEFT, bg=self.COLOR_BG, fg=self.COLOR_TEXT, height=2)
+        self.info_label = tk.Label(top_frame, text="", font=self.FONT_MAIN, justify=tk.LEFT, bg=self.COLOR_CARD, fg=self.COLOR_TEXT, height=2)
         self.info_label.pack(side="left")
 
-        self.coins_label = tk.Label(top_frame, text=f"남은 코인: {self.coins}", font=("Malgun Gothic", 14, "bold"), bg=self.COLOR_BG, fg=self.COLOR_ACCENT)
+        # 코인 레이블 강조 (FONT_TITLE 16pt)
+        self.coins_label = tk.Label(top_frame, text=f"남은 코인: {self.coins} 💰", font=self.FONT_TITLE, bg=self.COLOR_CARD, fg=self.COLOR_ACCENT)
         self.coins_label.pack(side="right")
 
-        # --- 주사위 디스플레이 ---
-        self.dice_display = tk.Label(game_frame, text="주사위: [ ? ] [ ? ] [ ? ]", font=("Malgun Gothic", 28, "bold"), bg=self.COLOR_BG, fg=self.COLOR_TEXT)
+        # --- 주사위 디스플레이 (폰트 60pt, 패딩 축소) ---
+        self.dice_display = tk.Label(game_frame, text="🎲 🎲 🎲", font=self.FONT_DICE, bg=self.COLOR_CARD, fg=self.COLOR_TEXT)
         self.dice_display.pack(pady=20)
 
-        # --- 상태 메시지 ---
-        self.status_label = tk.Label(game_frame, text="초기 코인을 설정하고 '새 라운드 시작'을 누르세요.", font=("Malgun Gothic", 12), bg=self.COLOR_BG, fg=self.COLOR_INFO)
-        self.status_label.pack(pady=10)
+        # --- 상태 메시지 (패딩 증가: 주사위 디스플레이와의 간격 확보) ---
+        self.status_label = tk.Label(game_frame, text="초기 코인을 설정하고 '새 라운드 시작'을 누르세요.", font=self.FONT_MAIN, bg=self.COLOR_CARD, fg=self.COLOR_INFO)
+        self.status_label.pack(pady=(20, 5)) # 상단 패딩을 20으로 늘림
 
-        # --- 베팅 버튼 프레임 ---
-        bet_frame = tk.Frame(game_frame, bg=self.COLOR_BG)
+        # --- 베팅 버튼 프레임 (패딩 축소) ---
+        bet_frame = tk.Frame(game_frame, bg=self.COLOR_CARD)
         bet_frame.pack(pady=15)
         
-        btn_font = ("Malgun Gothic", 10, "bold")
-        btn_style = {"font": btn_font, "bg": self.COLOR_BTN, "fg": self.COLOR_TEXT, "relief": tk.RAISED, "borderwidth": 3, "width": 18, "pady": 5}
+        # 버튼 스타일 축소
+        btn_font = ("Malgun Gothic", 11, "bold")
+        btn_style = {
+            "font": btn_font, 
+            "bg": self.COLOR_BTN, 
+            "fg": self.COLOR_TEXT, 
+            "relief": tk.RAISED, 
+            "borderwidth": 3, # 4 -> 3
+            "width": 18, 
+            "pady": 6, 
+            "activebackground": self.COLOR_ACCENT,
+            "activeforeground": self.COLOR_BG
+        }
 
         self.bet_button_over = tk.Button(bet_frame, text="▲ 11을 넘는다 (Over)", **btn_style, command=lambda: self.place_bet('over'), state=tk.DISABLED)
-        self.bet_button_over.pack(side=tk.LEFT, padx=10)
+        self.bet_button_over.pack(side=tk.LEFT, padx=10) # 15 -> 10
 
         self.bet_button_under = tk.Button(bet_frame, text="▼ 11 이하다 (Under)", **btn_style, command=lambda: self.place_bet('under'), state=tk.DISABLED)
-        self.bet_button_under.pack(side=tk.LEFT, padx=10)
+        self.bet_button_under.pack(side=tk.LEFT, padx=10) # 15 -> 10
 
-        # --- 진행 버튼 ---
-        self.next_roll_button = tk.Button(game_frame, text="다음 주사위 굴리기", font=btn_font, bg=self.COLOR_INFO, fg=self.COLOR_TEXT, relief=tk.RAISED, borderwidth=3, width=25, pady=4, command=self.next_roll, state=tk.DISABLED)
-        self.next_roll_button.pack(pady=10)
+        # --- 진행 버튼 스타일 축소 ---
+        progress_btn_style = {
+            "font": btn_font, 
+            "relief": tk.RAISED, 
+            "borderwidth": 3, 
+            "width": 20, # 25 -> 20
+            "pady": 5 # 6 -> 5
+        }
         
-        self.new_round_button = tk.Button(game_frame, text="새 라운드 시작", font=btn_font, relief=tk.RAISED, borderwidth=3, width=25, pady=4, command=self.start_new_round, state=tk.NORMAL)
+        self.next_roll_button = tk.Button(game_frame, text="다음 주사위 굴리기", **progress_btn_style, bg=self.COLOR_INFO, fg=self.COLOR_TEXT, command=self.next_roll, state=tk.DISABLED)
+        self.next_roll_button.pack(pady=(10, 5)) # 패딩 축소
+        
+        self.new_round_button = tk.Button(game_frame, text="새 라운드 시작", **progress_btn_style, bg=self.COLOR_SUCCESS, fg=self.COLOR_TEXT, command=self.start_new_round, state=tk.NORMAL)
         self.new_round_button.pack(pady=5)
         
-        self.restart_button = tk.Button(game_frame, text="재시작", font=btn_font, bg=self.COLOR_ACCENT, fg=self.COLOR_BG, relief=tk.RAISED, borderwidth=3, width=25, pady=4, command=self.restart_game, state=tk.DISABLED)
+        self.restart_button = tk.Button(game_frame, text="재시작", **progress_btn_style, bg=self.COLOR_FAILURE, fg=self.COLOR_TEXT, command=self.restart_game, state=tk.DISABLED)
         self.restart_button.pack(pady=5)
         
         
-        # --- 하단 콘텐츠 프레임: grid 사용으로 밀림 방지 ---
-        bottom_content_frame = tk.Frame(game_frame, bg=self.COLOR_BG)
+        # --- 하단 콘텐츠 프레임: 패딩 축소 ---
+        bottom_content_frame = tk.Frame(game_frame, bg=self.COLOR_CARD)
         bottom_content_frame.pack(fill="x", pady=(15, 0))
         bottom_content_frame.grid_columnconfigure(0, weight=1) 
         
-        # 1. 초기 코인 설정 프레임 (Row 0)
-        initial_coins_frame = tk.Frame(bottom_content_frame, bg=self.COLOR_BG)
-        initial_coins_frame.grid(row=0, column=0, pady=(20, 10)) 
+        # 1. 초기 코인 설정 프레임 (패딩/너비/폰트 축소)
+        initial_coins_frame = tk.Frame(bottom_content_frame, bg=self.COLOR_CARD)
+        initial_coins_frame.grid(row=0, column=0, pady=(5, 5)) 
 
-        tk.Label(initial_coins_frame, text="초기 코인:", font=("Malgun Gothic", 10), bg=self.COLOR_BG, fg=self.COLOR_TEXT).pack(side=tk.LEFT, padx=5)
+        tk.Label(initial_coins_frame, text="시작 코인 설정:", font=self.FONT_MAIN, bg=self.COLOR_CARD, fg=self.COLOR_TEXT).pack(side=tk.LEFT, padx=10)
 
-        self.minus_button = tk.Button(initial_coins_frame, text="-", font=("Malgun Gothic", 10, "bold"), bg=self.COLOR_BTN, fg=self.COLOR_TEXT, command=self.decrease_initial_coins, width=2)
+        input_style = {"font": self.FONT_MAIN, "bg": self.COLOR_BTN, "fg": self.COLOR_TEXT, "width": 3, "pady": 2}
+        
+        self.minus_button = tk.Button(initial_coins_frame, text="➖", **input_style, command=self.decrease_initial_coins)
         self.minus_button.pack(side=tk.LEFT)
 
-        self.initial_coins_entry = tk.Entry(initial_coins_frame, width=4, font=("Malgun Gothic", 10, "bold"), justify='center', bg=self.COLOR_BTN, fg=self.COLOR_TEXT)
+        self.initial_coins_entry = tk.Entry(initial_coins_frame, width=3, font=("Malgun Gothic", 11, "bold"), justify='center', bg=self.COLOR_BTN, fg=self.COLOR_ACCENT)
         self.initial_coins_entry.insert(0, str(self.initial_coins_value))
-        self.initial_coins_entry.pack(side=tk.LEFT, padx=5)
+        self.initial_coins_entry.pack(side=tk.LEFT, padx=6)
 
-        self.plus_button = tk.Button(initial_coins_frame, text="+", font=("Malgun Gothic", 10, "bold"), bg=self.COLOR_BTN, fg=self.COLOR_TEXT, command=self.increase_initial_coins, width=2)
+        self.plus_button = tk.Button(initial_coins_frame, text="➕", **input_style, command=self.increase_initial_coins)
         self.plus_button.pack(side=tk.LEFT)
         
-        # 2. 결과 메시지 (Row 1)
-        self.result_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 12, "bold"), wraplength=750, justify=tk.CENTER, bg=self.COLOR_BG)
-        self.result_label.grid(row=1, column=0, pady=(15, 10), sticky="ew") 
+        # 2. 결과 메시지 (폰트/wraplength 축소, 패딩 축소)
+        self.result_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 13, "bold"), wraplength=650, justify=tk.CENTER, bg=self.COLOR_CARD, fg=self.COLOR_TEXT)
+        self.result_label.grid(row=1, column=0, pady=(10, 5), sticky="ew") 
 
-        # 3. 명언 레이블 (Row 2)
+        # 3. 명언 레이블 (wraplength 축소, 패딩 축소)
         self.quote_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 10, "italic"),
-                                     wraplength=750, justify=tk.CENTER, bg=self.COLOR_BG, 
-                                     fg=self.COLOR_FAILURE)
-        self.quote_label.grid(row=2, column=0, pady=(5, 5), sticky="ew") 
+                                     wraplength=650, justify=tk.CENTER, bg=self.COLOR_CARD, 
+                                     fg=self.COLOR_INFO)
+        self.quote_label.grid(row=2, column=0, pady=(2, 2), sticky="ew") 
         
-        # --- [우측] 기록 영역 프레임 ---
-        self.history_frame = tk.Frame(main_frame, bg=self.COLOR_BG, width=300, relief=tk.SUNKEN, borderwidth=1)
+        # --- [우측] 기록 영역 프레임 (너비 축소 및 내부 패딩 축소) ---
+        self.history_frame = tk.Frame(main_frame, bg=self.COLOR_CARD, width=280, relief=tk.FLAT, borderwidth=1)
         self.history_frame.pack(side="right", fill="both", expand=True)
         self.history_frame.pack_propagate(False)
 
-        tk.Label(self.history_frame, text="🏆 최고 이익률 Top 5 🏆", font=("Malgun Gothic", 14, "bold"), bg=self.COLOR_BG, fg=self.COLOR_ACCENT, pady=10).pack(fill="x")
+        # 기록 타이틀 (폰트/패딩 축소)
+        tk.Label(self.history_frame, text="🏆 최고 이익률 Top 5 🏆", font=self.FONT_TITLE, bg=self.COLOR_BTN, fg=self.COLOR_ACCENT, pady=8).pack(fill="x")
         
-        # 기록 표시 레이블들을 위한 컨테이너
-        self.history_labels_container = tk.Frame(self.history_frame, bg=self.COLOR_BG)
+        # 기록 표시 레이블들을 위한 컨테이너 (패딩 축소)
+        self.history_labels_container = tk.Frame(self.history_frame, bg=self.COLOR_CARD)
         self.history_labels_container.pack(fill="both", expand=True, padx=10, pady=5)
         
         self.update_history_display()
@@ -167,10 +205,10 @@ class DiceBettingGame:
                 self.coins = int(self.initial_coins_entry.get())
                 self.initial_coins_value = self.coins
                 
-                # 초기 코인 설정 UI 비활성화
+                # 초기 코인 설정 UI 비활성화 및 스타일 변경
                 self.initial_coins_entry.config(state=tk.DISABLED, bg=self.COLOR_BTN, fg=self.COLOR_ACCENT)
-                self.minus_button.config(state=tk.DISABLED, bg=self.COLOR_BG, fg=self.COLOR_BG)
-                self.plus_button.config(state=tk.DISABLED, bg=self.COLOR_BG, fg=self.COLOR_BG)
+                self.minus_button.config(state=tk.DISABLED, bg=self.COLOR_CARD, fg=self.COLOR_CARD)
+                self.plus_button.config(state=tk.DISABLED, bg=self.COLOR_CARD, fg=self.COLOR_CARD)
             except (ValueError, TypeError):
                 self.coins = 3
                 self.initial_coins_value = 3
@@ -230,7 +268,7 @@ class DiceBettingGame:
         self.bet_button_over.config(state=tk.DISABLED)
         self.bet_button_under.config(state=tk.DISABLED)
         self.next_roll_button.config(state=tk.DISABLED)
-        self.status_label.config(text="주사위를 굴립니다...", fg="black")
+        self.status_label.config(text="주사위를 굴립니다...", fg=self.COLOR_TEXT)
         self.update_display()
         
         # 베팅 단계를 resolve_bet까지 전달
@@ -270,7 +308,7 @@ class DiceBettingGame:
             else:
                 # 불확실한 베팅: 2배 (원래 배율 유지)
                 payout = 2.0 
-                payout_description = "2배 (불확실성 조건)" # '반올림' 문구 제거
+                payout_description = "2배 (불확실성 조건)" 
             # ---------------------------------------------------
         
         total = sum(self.dice_values)
@@ -365,12 +403,13 @@ class DiceBettingGame:
         for widget in self.root.winfo_children():
             widget.destroy()
         
-        # 파산 메시지 표시
-        bankruptcy_label = tk.Label(self.root, text="파산", font=("Malgun Gothic", 100, "bold"), bg=self.COLOR_BG, fg=self.COLOR_FAILURE)
+        # 파산 메시지 표시 (폰트 크기 조정)
+        bankruptcy_label = tk.Label(self.root, text="파산 💸", font=("Malgun Gothic", 90, "bold"), bg=self.COLOR_BG, fg=self.COLOR_FAILURE)
         bankruptcy_label.pack(pady=(100, 0), expand=True)
 
-        btn_font = ("Malgun Gothic", 12, "bold")
-        new_game_button = tk.Button(self.root, text="새 게임", font=btn_font, bg=self.COLOR_BTN, fg=self.COLOR_TEXT, relief=tk.RAISED, borderwidth=3, width=20, pady=8, command=self.restart_game)
+        # 새 게임 시작 버튼 (폰트/패딩 축소)
+        btn_font = ("Malgun Gothic", 11, "bold")
+        new_game_button = tk.Button(self.root, text="새 게임 시작", font=btn_font, bg=self.COLOR_BTN, fg=self.COLOR_TEXT, relief=tk.RAISED, borderwidth=3, width=20, pady=6, command=self.restart_game)
         new_game_button.pack(pady=(20, 100), expand=True)
         
     def restart_game(self):
@@ -390,7 +429,7 @@ class DiceBettingGame:
             widget.destroy()
 
         if not self.profit_history:
-            tk.Label(self.history_labels_container, text="아직 기록된 게임이 없습니다.", bg=self.COLOR_BG, fg=self.COLOR_TEXT).pack(pady=10)
+            tk.Label(self.history_labels_container, text="아직 기록된 게임이 없습니다.", font=self.FONT_MAIN, bg=self.COLOR_CARD, fg=self.COLOR_TEXT).pack(pady=10)
             return
 
         for idx, (rate, initial, final) in enumerate(self.profit_history):
@@ -409,7 +448,7 @@ class DiceBettingGame:
                 fg_color = self.COLOR_TEXT
                 
             tk.Label(self.history_labels_container, text=text, anchor='w', justify=tk.LEFT,
-                     font=("Malgun Gothic", 10, "bold"), bg=self.COLOR_BG, fg=fg_color).pack(fill="x", pady=2, padx=5)
+                     font=("Malgun Gothic", 10, "bold"), bg=self.COLOR_CARD, fg=fg_color).pack(fill="x", pady=4, padx=5)
 
 
     def update_display(self):
@@ -428,10 +467,11 @@ class DiceBettingGame:
             
         self.info_label.config(text=info_text)
         
-        self.coins_label.config(text=f"남은 코인: {self.coins}")
+        self.coins_label.config(text=f"남은 코인: {self.coins} 💰")
 
-        dice_str = " ".join([f"[{val if val != 0 else '?'}]" for val in self.dice_values])
-        self.dice_display.config(text=f"주사위: {dice_str}")
+        # 유니코드 주사위 기호로 표시
+        dice_str = " ".join([self.DICE_SYMBOLS.get(val, '❓') for val in self.dice_values])
+        self.dice_display.config(text=dice_str)
 
         if self.current_stage == 0:
             self.status_label.config(text="새 라운드 시작 또는 초기 코인을 설정하세요.", fg=self.COLOR_INFO)
@@ -449,7 +489,7 @@ class DiceBettingGame:
             if is_certain:
                  certainty_msg = "확실한 결과입니다. (배율: 1.4배, 반올림)"
             else:
-                 certainty_msg = "결과가 불확실합니다. (배율: 2배)" # '반올림' 문구 제거
+                 certainty_msg = "결과가 불확실합니다. (배율: 2배)" 
             
             self.status_label.config(text=f"두 주사위는 {self.dice_values[0]}, {self.dice_values[1]}입니다. {certainty_msg}", fg=self.COLOR_INFO)
             self.next_roll_button.config(text="결과 확인 (베팅 안함)")
