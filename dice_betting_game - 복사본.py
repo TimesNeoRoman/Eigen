@@ -16,7 +16,7 @@ class DiceBettingGame:
     def __init__(self, root):
         self.root = root
         self.root.title("주사위 합 11 넘기기 게임") 
-        # 창 크기 유지: 가로 길이 1100 -> 1250으로 증가
+        # 창 크기 복원: 1200x750 -> 1250x750
         self.root.geometry("1250x750") 
         
         # --- 디자인 설정 (새로운 세련된 다크 테마) ---
@@ -35,8 +35,8 @@ class DiceBettingGame:
         self.FONT_TITLE = ("Malgun Gothic", 16, "bold")
         # 상태 메시지용 폰트 (메인 텍스트보다 크게 강조)
         self.FONT_STATUS = ("Malgun Gothic", 14, "bold") # 새로 추가
-        # 폰트 크기 조정: 70 -> 60
-        self.FONT_DICE = ("Malgun Gothic", 60, "bold")
+        # 폰트 크기 조정: 60 -> 50으로 축소
+        self.FONT_DICE = ("Malgun Gothic", 50, "bold")
 
         self.root.config(bg=self.COLOR_BG)
 
@@ -58,7 +58,7 @@ class DiceBettingGame:
         main_frame = tk.Frame(self.root, bg=self.COLOR_BG)
         main_frame.pack(fill="both", expand=True, padx=20, pady=20) # 패딩 축소
         
-        # --- [좌측] 게임 영역 프레임 (너비 축소 및 패딩 축소) ---
+        # --- [좌측] 게임 영역 프레임 (너비 680 -> 700으로 복원) ---
         game_frame = tk.Frame(main_frame, bg=self.COLOR_CARD, width=700, padx=15, pady=15, relief=tk.FLAT)
         game_frame.pack(side="left", fill="both", expand=True, padx=(0, 20)) 
         game_frame.pack_propagate(False)
@@ -75,7 +75,7 @@ class DiceBettingGame:
         self.coins_label = tk.Label(top_frame, text=f"남은 코인: {self.coins} 💰", font=self.FONT_TITLE, bg=self.COLOR_CARD, fg=self.COLOR_ACCENT)
         self.coins_label.pack(side="right")
 
-        # --- 주사위 디스플레이 (폰트 60pt, 패딩 축소) ---
+        # --- 주사위 디스플레이 (폰트 50pt, 패딩 유지) ---
         self.dice_display = tk.Label(game_frame, text="🎲 🎲 🎲", font=self.FONT_DICE, bg=self.COLOR_CARD, fg=self.COLOR_TEXT)
         self.dice_display.pack(pady=20)
 
@@ -95,7 +95,7 @@ class DiceBettingGame:
             "fg": self.COLOR_TEXT,  # 텍스트 색상은 흰색 유지
             "relief": tk.RAISED, 
             "borderwidth": 3, 
-            "width": 18, 
+            "width": 16, # 18 -> 16으로 축소
             "pady": 6, 
             "activebackground": self.COLOR_ACCENT,
             "activeforeground": self.COLOR_BG
@@ -114,7 +114,7 @@ class DiceBettingGame:
             "font": btn_font, 
             "relief": tk.RAISED, 
             "borderwidth": 3, 
-            "width": 20, 
+            "width": 18, # 20 -> 18로 축소
             "pady": 5 
         }
         
@@ -156,12 +156,14 @@ class DiceBettingGame:
         self.plus_button.pack(side=tk.LEFT)
         
         # 2. 결과 메시지 (폰트 13pt bold 유지, COLOR_TEXT는 흰색)
-        self.result_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 13, "bold"), wraplength=650, justify=tk.CENTER, bg=self.COLOR_CARD, fg=self.COLOR_TEXT)
+        # wraplength를 680으로 늘려 메시지 잘림 방지
+        self.result_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 13, "bold"), wraplength=680, justify=tk.CENTER, bg=self.COLOR_CARD, fg=self.COLOR_TEXT)
         self.result_label.grid(row=1, column=0, pady=(10, 5), sticky="ew") 
 
-        # 3. 명언 레이블 (폰트 10pt -> 11pt로 증가)
+        # 3. 명언 레이블 (폰트 11pt, 이탤릭)
+        # wraplength를 680으로 늘려 저자 표시 공간 확보
         self.quote_label = tk.Label(bottom_content_frame, text="", font=("Malgun Gothic", 11, "italic"),
-                                     wraplength=650, justify=tk.CENTER, bg=self.COLOR_CARD, 
+                                     wraplength=680, justify=tk.CENTER, bg=self.COLOR_CARD, 
                                      fg=self.COLOR_INFO)
         self.quote_label.grid(row=2, column=0, pady=(2, 2), sticky="ew") 
         
