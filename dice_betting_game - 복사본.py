@@ -267,9 +267,9 @@ class DiceBettingGame:
             is_certain = (sum_first_two >= 11) or (sum_first_two <= 5)
             
             if is_certain:
-                # 확실한 베팅: 1.3배
-                payout = 1.3
-                payout_description = "1.3배 (확실성 조건 충족, 반올림)"
+                # 확실한 베팅: 1.4배로 수정됨 (이전 1.3배)
+                payout = 1.4 
+                payout_description = "1.4배 (확실성 조건 충족, 반올림)"
             else:
                 # 불확실한 베팅: 2배 (원래 배율 유지)
                 payout = 2.0 
@@ -282,8 +282,8 @@ class DiceBettingGame:
         result = 'over' if total > 11 else 'under'
         
         if choice == result:
-            # 1.3배일 경우 반올림, 그 외 배율은 내림 처리
-            if payout == 1.3:
+            # 1.4배일 경우 반올림, 그 외 배율은 내림 처리
+            if payout == 1.4:
                 winnings = round(bet_amount * payout)
             else:
                 winnings = math.floor(bet_amount * payout)
@@ -422,8 +422,8 @@ class DiceBettingGame:
         stages_info = {
             0: "1단계: 주사위 0개 (최소 베팅: 1, 승리 조건: 합이 11 초과, 성공 시 4배)",
             1: "2단계: 주사위 1개 (최소 베팅: 2, 승리 조건: 합이 11 초과, 성공 시 3배)",
-            # 3단계: 확실성 여부에 따라 1.3배 또는 2배가 적용됩니다.
-            2: "3단계: 주사위 2개 (최소 베팅: 3, 승리 조건: 합이 11 초과, 성공 시 1.3배/2배)" 
+            # 3단계: 확실성 여부에 따라 1.4배 또는 2배가 적용됩니다.
+            2: "3단계: 주사위 2개 (최소 베팅: 3, 승리 조건: 합이 11 초과, 성공 시 1.4배/2배)" 
         }
         stage_text = stages_info.get(self.current_stage, '베팅 결과 확인 중')
         
@@ -448,10 +448,12 @@ class DiceBettingGame:
         elif self.current_stage == 2:
             # 첫 두 주사위의 합을 계산하여 확실성 메시지를 추가적으로 표시합니다.
             sum_two = self.dice_values[0] + self.dice_values[1]
-            if sum_two >= 11:
-                 certainty_msg = "Over 11이 확실합니다. (배율: 1.3배, 반올림)"
-            elif sum_two <= 5: # 4가 아닌 5로 수정되었습니다.
-                 certainty_msg = "Under 11이 확실합니다. (배율: 1.3배, 반올림)"
+            
+            # 확실성 조건: 합이 11 이상 (Over 확실) 또는 5 이하 (Under 확실)
+            is_certain = (sum_two >= 11) or (sum_two <= 5)
+            
+            if is_certain:
+                 certainty_msg = "확실한 결과입니다. (배율: 1.4배, 반올림)"
             else:
                  certainty_msg = "결과가 불확실합니다. (배율: 2배, 내림)"
             
