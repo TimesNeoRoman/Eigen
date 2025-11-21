@@ -8,7 +8,7 @@ import math
 class DiceBettingGame:
     def __init__(self, root):
         self.root = root
-        self.root.title("주사위 합 10 넘기기 게임")
+        self.root.title("주사위 합 11 넘기기 게임") 
         # 창 크기 유지
         self.root.geometry("1100x750") 
         
@@ -71,10 +71,10 @@ class DiceBettingGame:
         btn_font = ("Malgun Gothic", 10, "bold")
         btn_style = {"font": btn_font, "bg": self.COLOR_BTN, "fg": self.COLOR_TEXT, "relief": tk.RAISED, "borderwidth": 3, "width": 18, "pady": 5}
 
-        self.bet_button_over = tk.Button(bet_frame, text="▲ 10을 넘는다 (Over)", **btn_style, command=lambda: self.place_bet('over'), state=tk.DISABLED)
+        self.bet_button_over = tk.Button(bet_frame, text="▲ 11을 넘는다 (Over)", **btn_style, command=lambda: self.place_bet('over'), state=tk.DISABLED)
         self.bet_button_over.pack(side=tk.LEFT, padx=10)
 
-        self.bet_button_under = tk.Button(bet_frame, text="▼ 10 이하다 (Under)", **btn_style, command=lambda: self.place_bet('under'), state=tk.DISABLED)
+        self.bet_button_under = tk.Button(bet_frame, text="▼ 11 이하다 (Under)", **btn_style, command=lambda: self.place_bet('under'), state=tk.DISABLED)
         self.bet_button_under.pack(side=tk.LEFT, padx=10)
 
         # --- 진행 버튼 ---
@@ -251,44 +251,41 @@ class DiceBettingGame:
         payout_description = ""
         
         if betting_stage == 0:
-            payout = 4
+            payout = 4.0
             payout_description = "4배"
         elif betting_stage == 1:
-            payout = 3
+            payout = 3.0
             payout_description = "3배"
         elif betting_stage == 2:
             # --- 3단계 (주사위 2개)의 확실성 기반 배율 로직 ---
             sum_first_two = self.dice_values[0] + self.dice_values[1]
             
-            # 확실한 베팅 조건:
-            # 1. 'Over 10'이 확실: 첫 두 주사위의 합이 10, 11, 12인 경우
-            # 2. 'Under 10'이 확실: 첫 두 주사위의 합이 2, 3인 경우
-            is_certain = (sum_first_two >= 10) or (sum_first_two <= 3)
+            # 확실성 조건: 첫 두 주사위 합이 11 이상 (Over 확실) 또는 5 이하 (Under 확실)
+            is_certain = (sum_first_two >= 11) or (sum_first_two <= 5)
             
             if is_certain:
-                # 확실한 베팅: 1.3배
-                payout = 1.3
-                payout_description = "1.3배 (확실성 조건 충족)"
+                # 확실한 베팅: 1.4배
+                payout = 1.4 
+                payout_description = "1.4배 (확실성 조건 충족, 반올림)"
             else:
                 # 불확실한 베팅: 2배 (원래 배율 유지)
                 payout = 2.0 
-                payout_description = "2배 (불확실성 조건)"
+                payout_description = "2배 (불확실성 조건)" # '반올림' 문구 제거
             # ---------------------------------------------------
         
         total = sum(self.dice_values)
-        result = 'over' if total > 10 else 'under'
+        
+        # 승리 조건: total > 11
+        result = 'over' if total > 11 else 'under'
         
         if choice == result:
-            # === 요청 사항 반영: 1.3배일 경우 소수점은 반올림(round) 처리 ===
-            if payout == 1.3:
-                winnings = round(bet_amount * payout) # 소수점 반올림 처리
-            else:
-                winnings = math.floor(bet_amount * payout) # 그 외 배율은 내림 처리 (기존 로직 유지)
+            # 모든 배율에 대해 반올림 처리
+            winnings = round(bet_amount * payout)
 
             self.coins += winnings
             self.status_label.config(text="라운드 종료!", fg=self.COLOR_TEXT)
             self.result_label.config(text=f"✅ 성공! {winnings} 코인 (배율: {payout_description})을 얻었습니다.\n최종 합: {total}", fg=self.COLOR_SUCCESS)
-            self.quote_label.config(text="") # 성공 시 명언 레이블 초기화
+            self.quote_label.config(text="") 
         else:
             full_message = "명언을 가져오는 데 실패했습니다."
             try:
@@ -417,10 +414,10 @@ class DiceBettingGame:
 
     def update_display(self):
         stages_info = {
-            0: "1단계: 주사위 0개 (최소 베팅: 1, 성공 시 4배)",
-            1: "2단계: 주사위 1개 (최소 베팅: 2, 성공 시 3배)",
-            # 3단계: 확실성 여부에 따라 1.3배 또는 2배가 적용됩니다.
-            2: "3단계: 주사위 2개 (최소 베팅: 3, 성공 시 1.3배(확실, 반올림) / 2배(불확실, 내림))" 
+            0: "1단계: 주사위 0개 (최소 베팅: 1, 승리 조건: 합이 11 초과, 성공 시 4배)",
+            1: "2단계: 주사위 1개 (최소 베팅: 2, 승리 조건: 합이 11 초과, 성공 시 3배)",
+            # 3단계: 확실성 여부에 따라 1.4배 또는 2배가 적용됩니다.
+            2: "3단계: 주사위 2개 (최소 베팅: 3, 승리 조건: 합이 11 초과, 성공 시 1.4배/2배)" 
         }
         stage_text = stages_info.get(self.current_stage, '베팅 결과 확인 중')
         
@@ -445,20 +442,24 @@ class DiceBettingGame:
         elif self.current_stage == 2:
             # 첫 두 주사위의 합을 계산하여 확실성 메시지를 추가적으로 표시합니다.
             sum_two = self.dice_values[0] + self.dice_values[1]
-            if sum_two >= 10:
-                 certainty_msg = "Over 10이 확실합니다. (배율: 1.3배, 반올림)"
-            elif sum_two <= 3:
-                 certainty_msg = "Under 10이 확실합니다. (배율: 1.3배, 반올림)"
+            
+            # 확실성 조건: 합이 11 이상 (Over 확실) 또는 5 이하 (Under 확실)
+            is_certain = (sum_two >= 11) or (sum_two <= 5)
+            
+            if is_certain:
+                 certainty_msg = "확실한 결과입니다. (배율: 1.4배, 반올림)"
             else:
-                 certainty_msg = "결과가 불확실합니다. (배율: 2배, 내림)"
+                 certainty_msg = "결과가 불확실합니다. (배율: 2배)" # '반올림' 문구 제거
             
             self.status_label.config(text=f"두 주사위는 {self.dice_values[0]}, {self.dice_values[1]}입니다. {certainty_msg}", fg=self.COLOR_INFO)
             self.next_roll_button.config(text="결과 확인 (베팅 안함)")
         elif self.current_stage == 3 and not any(v == 0 for v in self.dice_values):
             pass
 
-
 if __name__ == "__main__":
+    # tkinter 윈도우 생성
     root = tk.Tk()
+    # 게임 인스턴스 생성 및 시작
     game = DiceBettingGame(root)
+    # 이벤트 루프 시작 (이 부분이 GUI를 화면에 표시하고 상호작용을 처리합니다)
     root.mainloop()
